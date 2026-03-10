@@ -1,0 +1,21 @@
+outcome_label,treatment_label,r_sq,monotone,linearity
+Aid to poor opposition,National prospective economic pessimism,1,TRUE,Highly linear
+Aid to poor opposition,National retrospective economic pessimism,1,TRUE,Highly linear
+Aid to poor opposition,Personal financial prospective worry,1,TRUE,Highly linear
+Aid to poor opposition,Personal financial retrospective pessimism,1,TRUE,Highly linear
+Government favors Blacks (amount),National prospective economic pessimism,1,TRUE,Highly linear
+Government favors Blacks (amount),National retrospective economic pessimism,1,TRUE,Highly linear
+Government favors Blacks (amount),Personal financial prospective worry,1,TRUE,Highly linear
+Government favors Blacks (amount),Personal financial retrospective pessimism,1,TRUE,Highly linear
+Racial resentment index,National prospective economic pessimism,1,TRUE,Highly linear
+Racial resentment index,National retrospective economic pessimism,1,TRUE,Highly linear
+Racial resentment index,Personal financial prospective worry,1,TRUE,Highly linear
+Racial resentment index,Personal financial retrospective pessimism,1,TRUE,Highly linear
+Welfare spending opposition,National prospective economic pessimism,1,TRUE,Highly linear
+Welfare spending opposition,National retrospective economic pessimism,1,TRUE,Highly linear
+Welfare spending opposition,Personal financial prospective worry,1,TRUE,Highly linear
+Welfare spending opposition,Personal financial retrospective pessimism,1,TRUE,Highly linear
+White status / jobs threat,National prospective economic pessimism,1,TRUE,Highly linear
+White status / jobs threat,National retrospective economic pessimism,1,TRUE,Highly linear
+White status / jobs threat,Personal financial prospective worry,1,TRUE,Highly linear
+White status / jobs threat,Personal financial retrospective pessimism,1,TRUE,Highly linear

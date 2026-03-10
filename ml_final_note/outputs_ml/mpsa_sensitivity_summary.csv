@@ -1,0 +1,13 @@
+treatment,outcome,primary,n_matched_pairs,hl_estimate,is_binary,critical_gamma,robust,robustness_rating
+National prospective economic pessimism,Racial resentment index,TRUE,1738,0.3751,FALSE,1.75,TRUE,Moderate (Gamma 1.5-2.0)
+National retrospective economic pessimism,Racial resentment index,TRUE,1336,1.625,FALSE,3,TRUE,Strong (Gamma >= 2.0)
+Personal financial prospective worry,Racial resentment index,TRUE,1637,0.125,FALSE,1.25,FALSE,Weak (Gamma 1.25-1.5)
+Personal financial retrospective pessimism,Racial resentment index,TRUE,1580,1.2499,FALSE,3,TRUE,Strong (Gamma >= 2.0)
+National prospective economic pessimism,Government favors Blacks (amount),FALSE,1738,0.5001,FALSE,1.75,TRUE,Moderate (Gamma 1.5-2.0)
+National retrospective economic pessimism,Government favors Blacks (amount),FALSE,1336,2.0001,FALSE,3,TRUE,Strong (Gamma >= 2.0)
+Personal financial prospective worry,Government favors Blacks (amount),FALSE,1637,0.4999,FALSE,1.25,FALSE,Weak (Gamma 1.25-1.5)
+Personal financial retrospective pessimism,Government favors Blacks (amount),FALSE,1580,2,FALSE,3,TRUE,Strong (Gamma >= 2.0)
+National prospective economic pessimism,White status / jobs threat,FALSE,1738,0.5,FALSE,1.5,TRUE,Moderate (Gamma 1.5-2.0)
+National retrospective economic pessimism,White status / jobs threat,FALSE,1336,1.4999,FALSE,3,TRUE,Strong (Gamma >= 2.0)
+Personal financial prospective worry,White status / jobs threat,FALSE,1637,0,FALSE,1.25,FALSE,Weak (Gamma 1.25-1.5)
+Personal financial retrospective pessimism,White status / jobs threat,FALSE,1580,1.0001,FALSE,3,TRUE,Strong (Gamma >= 2.0)

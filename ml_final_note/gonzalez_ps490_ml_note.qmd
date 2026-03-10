@@ -1,0 +1,318 @@
+---
+title: "Testing Economic Attitudes with Causal Forests"
+author:
+    - 'Nicholas R. Gonzalez^[PhD Student. Northwestern University. Email: <NicholasGonzalez2029@u.northwestern.edu>]'
+date: today
+date-format: long
+abstract: \singlespacing Economic pessimism among white Americans is typically treated as downstream of racial attitudes rather than a cause of them. This paper challenges that assumption using 2024 ANES data and a 2×2 design crossing referent type (national vs. personal) with temporal orientation (retrospective vs. prospective). I compare GPS-OLS against continuous causal forests adjusting nonparametrically for 40+ covariates, and find that national retrospective economic pessimism predicts racial resentment consistently across both estimators, surviving high-dimensional nonparametric adjustment and demanding sensitivity analysis thresholds. GPS-OLS estimates are systematically two to three times larger than causal forest estimates across all treatment-outcome combinations, which is a divergence I document and treat as a substantive finding about the credibility of observational effect estimates in political behavior research.
+format: 
+     pdf:
+       documentclass: article 
+fontsize: 12pt
+bibliography: mpsa_dubois.bib
+number-sections: FALSE # automatic section numbering
+urlcolor: blue # highlight links
+citecolor: blue
+link-citations: true
+geometry: # margins
+      - left=1in
+      - right=1in
+      - top=1in
+      - bottom=1in
+header-includes:
+    # Line spacing
+    - \usepackage{setspace}
+    - \doublespacing
+    # Figures and tables always on top of page
+    - \usepackage{float}
+    - \floatplacement{figure}{t}
+    - \floatplacement{table}{t}
+    # Tables and figures appear after they are mentioned
+    - \usepackage{flafter}
+    # Figure stays within their section
+    - \usepackage[section]{placeins}
+---
+
+```{r setup, include=FALSE}
+library(kableExtra)
+library(tidyverse)
+
+fig_dir <- "~/Documents/mpsa_dubois/ml_final_note/final_outputs"
+fig     <- function(f) file.path(fig_dir, f)
+```
+
+\newpage 
+
+## Introduction 
+
+This research note examines how economic pessimism shapes racial resentment, redistribution attitudes, and status threat beliefs among white Americans, using four treatments from the 2024 American National Election Study that cross referent type (national economy vs. personal finances) with temporal orientation (retrospective vs. prospective). I follow @melcher_economic_2023 in treating racial resentment as an output of political and economic processes rather than a fixed symbolic prior, positioning the project against the dominant tradition associated with @kinder_divided_1996 and @sears_role_1991 that treats racial resentment as a prior moral orientation that structures downstream preferences rather than being shaped by them. Grounded in @du_bois_black_1998's analysis of the psychological wage of whiteness and @fields_racecraft_2022's concept of racecraft, I argue that economic narratives arrive pre-coded with racial content through the institutional channels of American political development, transmitted through the elite partisan infrastructure documented by @tesler_post-racial_2016 and @mendelberg_race_2001, such that what gets measured as racial resentment in survey data is, in part, the affective residue of that coding process. Methodologically, I compare GPS-OLS against a continuous causal forest adjusting nonparametrically for more than 40 covariates, and I show that GPS-OLS estimates are systematically two to three times larger than causal forest estimates across every treatment-outcome combination. This divergence I document and explain, and treat as itself a substantive finding about how political behavior research evaluates the credibility of observational effect estimates.
+
+## Data and Estimation Strategy
+
+### Data
+
+The analysis uses the 2024 American National Election Study and restricts it to non-Hispanic white respondents (N = 3,946). Missing data is handled via multiple imputation by chained equations (MICE, m = 3, maxit = 3)^[This will eventually become m = 20, maxit = 10]. All causal forest estimates are pooled across imputations using Rubin's rules [@rubin_multiple_1987].
+
+### Treatment Structure
+
+```{r treatment-table, echo=FALSE, results='asis'}
+tribble(
+  ~` `,            ~`Retrospective (past year)`,          ~`Prospective (next year)`,
+  "National",  "Did the national economy worsen? (V241294x)",
+                   "Do you expect the economy to worsen? (V241297x)",
+  "Personal",  "Did your personal finances worsen? (V241451)",
+                   "Do you expect your finances to worsen? (V241452)"
+) %>%
+  kable(escape = FALSE,
+        caption = "Treatment structure: 2x2 design crossing referent (national/personal) by temporal orientation (retrospective/prospective). All treatments retain the full 1-5 ordinal scale.") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE) %>%
+  column_spec(1, width = "6em") %>%
+  column_spec(2, width = "12em") %>%
+  column_spec(3, width = "12em")
+```
+
+
+The project's 2×2 design (national economy vs. personal finances) with temporal orientation (retrospective vs. prospective) is theoretically motivated by prior political behavior scholarship arguing that national economic evaluations carry more elite racial coding than personal financial assessments, because national narratives are more susceptible to the framing and cues in which allows partisan media and political elites to transmit racialized interpretations of economic conditions [@mutz_status_2018; @tesler_post-racial_2016]. The retrospective-prospective distinction adds a second theoretical axis, that being retrospective evaluations reflect accumulated experience and are more likely to have been processed through elite-coded narratives, while prospective expectations are more idiosyncratic. Nonetheless, the broader logic of this project aims to connect economic beliefs to attitudes toward other racial groups, which draws on a longer theoretical tradition in doing so [@du_bois_black_1998;@fields_racecraft_2022].
+
+
+### Outcome Set
+
+```{r outcome-table, echo=FALSE, results='asis'}
+tribble(
+  ~`Variable`,               ~`Label`,                          ~`Domain`,        ~`Direction`,
+  "O1_rr_index",             "Racial resentment index",         "Primary",        "Higher = more RR",
+  "O2_welfare_binary",       "Welfare spending opposition",     "Redistribution", "Higher = more opposition",
+  "O3_aidpoor_binary",       "Aid to poor opposition",          "Redistribution", "Higher = more opposition",
+  "O4_status_jobs_threat",   "White status / jobs threat",      "Status threat",  "Higher = more threat",
+  "O5_gov_favors_blacks_amt","Govt. favors Blacks (amount)",    "Status threat",  "Higher = more perceived favoritism"
+) %>%
+  kable(caption = "Full outcome set (5 outcomes). Theory-driven hierarchy: O1 is primary; O4-O7 secondary.") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE) %>%
+  column_spec(1, width = "12em") %>%
+  column_spec(2, width = "10em") %>%
+  column_spec(3, width = "6em") %>%
+  column_spec(4, width = "8em")
+```
+
+### Estimators
+
+This project uses two main estimators. The GPS-OLS modeling strategy is treated as the standard approach in observational political behavior research, as it is one of the more common modeling strategies in the field. The continuous causal forest serves as the second estimator and primary methodological contribution, as well are the primary results of intrigue. Both models use multiply imputed data via MICE rather than complete-case analysis, following the position that multiple imputation makes a project more robust without changing the substantive story [@gay_effect_2001]. While this project recognizes the value of leveraging newer machine learning techniques, it also takes the position held by other scholars that ML does not solve inherent data or social science problems, rather it serves instead as a stress test, a way of evaluating whether results produced under conventional parametric assumptions hold up under more flexible ones (Morucci & Spriling 2024^[Working Paper]). 
+
+
+**GPS-OLS (ATE, continuous):** Following @hirano_propensity_2004, the generalized propensity score models estimate a dose-response curve on the continuous 1–5 treatment scale. GPS-OLS adjusts for confounders parametrically, imposing linearity on the outcome model conditional on the propensity score. This is the benchmark estimator as it is the approach most familiar to political behavior audiences. 
+
+**Continuous Causal Forest (ATE, continuous):** Causal forests via the GRF framework and R package [@wager_estimation_2018; @athey_generalized_2019] estimates a local average marginal effect ($dY/dW$) using sample splitting and recursive partitioning. The forest adjusts for confounders in nonparametric way without specifying functional form, and its expanded covariate set includes all OLS controls plus approximately 40 additional ANES items capturing political attitudes, policy preferences, and demographics ^[See appendix for all variables].
+
+Both estimators target the same estimand on the same continuous treatment scale but impose different statistical assumptions about the confounding surface. When they converge, linearity is locally defensible and the parametric approach is somewhat vindicated. When they diverge, the causal forest estimate is preferred, because it does not overcount variance from nonlinear covariate interactions that GPS-OLS absorbs into the treatment effect. 
+
+
+## Covariate Balance and Confounding Adjustment
+
+Covariate balance and confounding adjustment tests were conducted because the credibility of any causal estimate from observational data depends on the assumption that, after adjusting for the observed covariate set, treatment assignment is approximately independent of potential outcomes. Before presenting treatment effect estimates, the analysis needs to establish two things: how much raw confounding is present in the data, and how much of it each estimator actually absorbs. The difference-in-means (DIM) to doubly-robust (DR) attenuation table does both simultaneously. The raw DIM estimates show that respondents who hold pessimistic economic views differ systematically from those who do not on observable characteristics, and the comparison between ordinary least squares (OLS) and causal forest (CF) adjustment shows that the parametric control set leaves roughly a third of that confounding unabsorbed while the nonparametric CF controls absorb over 90%.^[This logic stems from a working paper by Sam Fuller and Jack T. Rametta] 
+
+
+```{r fig-balance, echo=FALSE, out.width="100%", fig.cap="DIM to doubly-robust attenuation by control set and treatment. Steeper decline from DIM to DR indicates more confounding absorbed. OLS controls absorb approximately 67\\% of raw confounding; the expanded CF controls absorb 93\\%, a 26-percentage-point gap reflecting the nonparametric use of covariate interactions. The CPT fails for all treatments under both control sets."}
+knitr::include_graphics(fig("fig_03_balance_attenuation.png"))
+```
+
+
+## Main Results
+
+### Primary Outcome: Racial Resentment
+
+```{r fig-primary, echo=FALSE, out.width="100%", fig.cap="GPS-OLS versus continuous causal forest estimates for the primary outcome (racial resentment index). Both estimators target the continuous ATE on the same 1--5 treatment scale. GPS-OLS estimates are two to three times larger across all treatments. Red = p $<$ .05; gray = not significant. Error bars = 95\\% CI."}
+knitr::include_graphics(fig("fig_01_estimator_comparison_primary.png"))
+```
+
+The most immediate finding when examining results for this project's primary outcome that being racial resentment, is the systematic divergence between the two modeling strategies. GPS-OLS estimates are two to three times larger than causal forest estimates across every treatment, as noted previously. For national retrospective pessimism, GPS-OLS finds $b = 0.226$ while causal forests finds $b = 0.069$. Both are statistically significant, but the magnitude gap reflects parametric linear adjustment overcounting treatment variance in a high-dimensional confounding surface. The divergence is sharpest for national prospective pessimism, where GPS-OLS finds $b = 0.086$ ($p < .001$) while the causal forest finds $b = 0.006$ ($p = .600$). That gap is not noise but rather it is the causal forest absorbing confounding that GPS-OLS incorrectly attributes to the treatment, a product of both the smaller OLS control set and the linearity assumption imposed on modeling process. 
+
+
+### All Outcomes
+
+```{r fig-all-outcomes, echo=FALSE, out.width="100%", fig.cap="GPS-OLS versus continuous causal forest estimates across all outcomes. Racial resentment (primary, shaded) is the most consistently activated outcome. Status threat outcomes show the largest GPS-OLS/CF divergence. Welfare spending opposition excluded from CF results (moved to appendix; see Section 8). Red = p $<$ .05."}
+knitr::include_graphics(fig("fig_02_estimator_comparison_all.png"))
+```
+
+Across all outcomes, racial resentment is the most consistently activated by economic pessimism, while redistribution outcomes show more heterogeneity across treatments and estimators. Status threat outcomes show the largest divergence between GPS-OLS and the causal forest as GPS-OLS finds significant effects across nearly every treatment while the causal forest finds many nulls. This suggests that explicit group-competition beliefs require more targeted contextual activation than diffuse economic pessimism alone provides, and that the parametric approach is picking up confounding in this domain rather than real effects. Ultimately causal forrests is not as a method that overturns conventional results, but rather is a stress test that tells a more conservative and better-identified story. 
+
+## Sensitivity Analysis
+
+This project includes sensitivity analysis via Rosenbaum bounds because of CPT received when doing a balance analysis. The CPT failures mean that even after adjustment, treated and untreated units remain systematically different on observed covariates. In other words, the people who hold pessimistic economic views are still distinguishably different from those who do not, even after controlling for the full covariate set. Therefore, the question the sensitivity analysis answers is therefore not whether unmeasured confounding exists, but how much would be required to explain away the results. @rosenbaum_covariance_2002 provide a formal answer by asking what magnitude of hidden bias, expressed as a multiplier $\Gamma$ on the odds of treatment assignment, would be sufficient to attribute the observed treatment-outcome association entirely to confounding rather than a real effect. For national retrospective pessimism, $\Gamma = 3.0$ means a hidden confounder would need to triple the odds of treatment assignment to eliminate the result, a threshold that is substantively demanding given that the expanded covariate set already adjusts for more than 40 variables nonparametrically. 
+
+
+```{r fig-sensitivity, echo=FALSE, out.width="100%", fig.cap="Rosenbaum sensitivity analysis: critical $\\Gamma$ by treatment and outcome. Critical $\\Gamma$ is the magnitude of unmeasured confounding required to explain away the result. Green = $\\Gamma \\geq 2.5$ (strong robustness); orange = 1.5--2.5 (moderate); red = $< 1.5$ (weak). National retrospective pessimism achieves $\\Gamma = 3.0$ for racial resentment."}
+knitr::include_graphics(fig("fig_06_sensitivity_gamma.png"))
+```
+
+
+
+## Diagnostics: Continuous CF Validity
+
+
+### Calibration Test
+
+The `test_calibration()` function from the GRF package tests whether the forest's nuisance models — the outcome model and the propensity model — are well-specified enough to produce reliable treatment effect estimates. The mean forest prediction coefficient should be approximately 1.0; a coefficient far from 1.0 indicates bias in the forest's adjustment, and large standard errors indicate the test lacks sufficient power to distinguish a well-calibrated forest from a badly misspecified one.
+
+```{r fig-calibration, echo=FALSE, out.width="95%", fig.cap="Continuous CF calibration: mean forest prediction coefficient by treatment (primary outcome). Coefficient should be approximately 1.0 with a tight standard error. Green shaded band = acceptable range $[0.7, 1.3]$. Green points = good calibration; red = fails. Note the wide CI for national prospective pessimism ($SE = 3.647$), indicating the calibration test has no statistical power for that treatment."}
+knitr::include_graphics(fig("fig_07_calibration_primary.png"))
+```
+
+Among the four treatments, national retrospective pessimism is the only one with both a calibration coefficient near 1.0 and a tight standard error ($\hat{b} = 1.053$, $SE = 0.256$), meaning the forest is identifying real variation in the treatment-outcome relationship rather than fitting noise. Personal financial retrospective pessimism passes calibration with more uncertainty ($SE = 0.401$). Personal financial prospective worry is nominally calibrated but the standard error of 0.568 signals limited identifying power. National prospective pessimism fails outright — a standard error of 3.647 means the calibration test has no statistical power, and the forest cannot distinguish a well-specified model from a misspecified one for this treatment. Any average treatment effect (ATE) estimate produced for national prospective is therefore untrustworthy regardless of its nominal significance, and the GPS-OLS result that appeared significant for this treatment should be understood as confounding that the forest cannot adequately adjust for rather than a real effect. This calibration hierarchy maps directly onto the sensitivity analysis results: the treatments that survive Rosenbaum bounds scrutiny are the same ones that pass calibration, reinforcing the convergent evidential logic that runs through the diagnostic section as a whole.
+
+
+### $\hat{W}$ Distribution: Propensity Support
+
+The $\hat{W}$ plot below make the identification problem for national prospective pessimism visually clear. The forest predicts nearly every unit to be near the neutral midpoint ($\hat{W}$ SD = 0.349, range = [1.94, 3.62]) meaning the treatment is essentially unpredictable from the covariate set and the forest has almost no leverage for causal identification. Compare this to national retrospective pessimism ($\hat{W}$ SD = 0.975, range = [1.75, 4.91]), where the propensity model spreads across nearly the full treatment scale, confirming genuine covariate-based identifying variation. Personal financial prospective worry shows a similar piling problem ($\hat{W}$ SD = 0.200, range = [2.40, 3.49]), consistent with its weak calibration results above.
+
+
+```{r fig-what-density, echo=FALSE, out.width="100%", fig.cap="$\\hat{W} = E[W \\mid X]$: the forest's continuous treatment propensity model. Solid = $\\hat{W}$ distribution; dashed = observed $W$ distribution. Good support requires spread across the full $[1, 5]$ scale. National prospective pessimism and personal financial prospective worry show severe piling near the neutral midpoint, indicating near-zero identifying variation in the propensity model."}
+knitr::include_graphics(fig("fig_08_what_density.png"))
+```
+
+
+## Variable Importance
+
+The variable importance analysis examines which covariates the causal forest relies on most heavily when partitioning the confounding and treatment effect surfaces. GRF's `variable_importance()` function returns a depth-weighted count of how often each variable is used as a splitting variable across all trees in the forest. This is a measure of which covariates do the most work in both the nuisance model and the heterogeneous treatment effect model. All figures use the first MICE imputation and the same forest specification as the main results (2,000 trees, min.node.size = 5, honesty = TRUE). Scores are normalized to [0, 1] within each forest to allow comparison across treatment-outcome combinations.
+
+```{r fig-varimp-primary, echo=FALSE, out.width="100%", fig.cap="Variable importance for the primary outcome (racial resentment index) across all four treatments. Top 15 covariates shown per panel. Normalized importance: 1.0 = most important covariate in that forest. The forest adjusts for 40+ covariates nonparametrically; variables appearing here are those doing the most work to absorb confounding and identify the treatment effect."}
+knitr::include_graphics(fig("fig_10_varimp_primary.png"))
+```
+
+The most striking feature of Figure 10 is how consistently non-economic items are top predictors of racial resentment are. For national retrospective pessimism, the single most important covariate by a wide margin is hostile sexism, which is the ANES item asking whether women over-interpret innocent remarks as sexist (normalized importance = 1.0), nearly twice as important as the next predictor (spending and services scale, 0.46). The @kinder_divided_1996 racial resentment scale was designed to capture a moral-affective orientation rooted in the perception that out-groups violate core American values, and research on authoritarian and status-hierarchical attitudes has long documented the co-constitution of racial and gender-based resentment within that same orientation [@strolovitch_possessive_2017; @junn_trump_2017]. What the forest is detecting is that hostile sexism and racial resentment travel together so systematically that they form a single confounding structure. This gives credence te argument that both are produced by the same underlying status-hierarchical attitudinal package, which in the theoretical language of this paper represents racecraft operating simultaneously across racial and gender axes of social hierarchy. From that perspective, hostile sexism is not simply a nuisance covariate to be controlled away, rather it is evidence that economic pessimism activates racial resentment through a broader status-threat complex in which hostility toward women's equality and hostility toward racial equality are co-produced rather than independent. Treating them as separable symbolic orientations, as the @kinder_divided_1996 tradition implicitly does, understates the coherence of the underlying attitudinal system.
+
+Other important predictors for national retrospective pessimism includes religion denomination (0.42), trouble concentrating in the past week (0.41), life satisfaction (0.40), and the PHQ-2 depression item for little interest or pleasure in daily activities (0.39). The prominence of clinical mental health screeners at this level of importance is substantively significant and connects to @melcher_economic_2023's finding that affective economic insecurity, that being not objective conditions or cognitive expectation formation, is the dimension of economic experience most consistently linked to racial attitudes. Psychologically distressed respondents are both more likely to evaluate economic conditions negatively and more likely to hold racially resentful attitudes independently of their material circumstances. 
+
+The importance profile shifts instructively across treatments in ways that map onto the paper's theoretical distinction. For personal financial retrospective pessimism, the emotions battery dominates: worried (1.0); outraged (0.36); afraid (0.33); alongside abortion stance (0.49) and employment status (0.42). Personal financial pessimism is more tightly coupled with affective states about one's own situation, while national retrospective pessimism is more coupled with stable dispositional orientations. This is consistent with @tesler_post-racial_2016's argument that national economic narratives carry accumulated elite racial coding that personal financial assessments do not. For personal financial prospective worry, housing payment ability (1.0) and both PHQ-2 depression items (0.95, 0.91) dominate. Therefore, this treatment functions empirically as a measure of financial anxiety and psychological distress rather than rational forward-looking expectation, which is why it maps onto racial resentment through this distress pathway rather than an ideological one. For national prospective pessimism, current financial worry (1.0) and fear (0.57) lead and ideology appears at only 0.23.
+
+```{r fig-varimp-grid, echo=FALSE, out.width="100%", fig.pos="H", fig.cap="Variable importance across all main analysis outcomes (welfare excluded; see Figure 12). Top 15 covariates per panel, normalized within each forest. The sexism items and psychological distress variables dominate the racial resentment rows. Redistribution outcomes show more income- and spending-preference confounding. Status threat outcomes show the most heterogeneous profiles across treatments."}
+knitr::include_graphics(fig("fig_11_varimp_outcome_grid.png"))
+```
+
+Figure 11 extends the importance analysis across all main outcomes (fix this figure, its not readable). For aid-to-poor opposition, spending preferences and income variables rise in relative importance, consistent with that outcome's closer connection to material self-interest and redistributive ideology. This is the domain where @melcher_economic_2023's self-interest argument is most directly legible in the forest's confounding structure, and it is the redistribution outcome where the causal forest finds a consistent positive effect. For white status and jobs threat, the sexism items and spending scales remain prominent but the importance profile is noisier across treatments, consistent with the theoretical claim that explicit group-competition beliefs require more targeted contextual activation. This is also what existing experimental work highlights as demographic threat cues [@richeson_negotiating_2007]. For government favors Blacks (amount), the distress and sexism items appear prominently again, suggesting this institutional grievance measure is tapping the same underlying attitudinal complex as racial resentment rather than a distinct calculus about government policy.
+
+
+```{r fig-varimp-welfare, echo=FALSE, out.width="100%", fig.pos="H", fig.cap="Variable importance comparison: racial resentment index versus welfare spending opposition, national retrospective treatment only. Top 15 covariates per panel. Red bars = party/ideology-adjacent covariates prominent in the welfare forest. Orange bars = party/ideology-adjacent covariates in the racial resentment forest (lower relative importance). The welfare forest is dominated by pre-election presidential vote (0.94) — the empirical basis for the partisan absorption explanation."}
+knitr::include_graphics(fig("fig_12_varimp_welfare_flag.png"))
+```
+
+Figure 12 provides the empirical explanation for welfare spending opposition's failure in the causal forest, which is in contrast to existing scholarship [@gilens_why_1999]. The welfare forest's top predictor is emotion: angry (1.0), but the second — pre-election presidential vote, which reaches normalized importance of 0.94 and is flagged as party/ideology-adjacent. Pre-election vote choice is effectively a near-perfect proxy for partisan identity, and at this level of importance the welfare nuisance model has collapsed into a partisan sorting dimension that absorbs rather than isolates treatment variation. The government assistance to Blacks scale (0.37) also ranks highly in the welfare results. In contrast, party and ideology variables in the racial resentment forest are present but at substantially lower relative importance (spending: welfare programs, 0.30; DEI approval, 0.30), meaning the racial resentment forest is doing genuinely multi-dimensional confounding adjustment while the welfare forest has been captured largely partisan structure. So in someways, the results actually are is theoretically consistent with @gilens_why_1999's core argument that welfare attitudes are more thoroughly organized around racialized deservingness and partisan identity than racial resentment itself.
+
+
+## Summary of Findings
+
+The central finding of this paper is that National retrospective economic pessimism predicts racial resentment consistently across every specification: GPS-OLS ($b = 0.226$, $p < .001$), continuous causal forest ($b = 0.069$, $p < .001$) and Rosenbaum sensitivity analysis at $\Gamma = 3.0$. This convergence across methods directly engages the challenge that Kinder and Sears (1981) and @kinder_divided_1996 pose to economic accounts of racial politics. The symbolic politics tradition has long treated racial resentment as a prior moral orientation that structures preferences rather than an output of economic conditions. The results here do not discard that framework as the racial resentment scale retains analytic utility, but they establish, consistent with @melcher_economic_2023, that the attitudes the scale measures are at least partially downstream of economic perception, and that this relationship survives high-dimensional nonparametric adjustment in ways that prior parametric work could not establish with comparable credibility. The @fields_racecraft_2022 racecraft framework also potentially names the mechanism connecting these findings, that being economic narratives transmitted through the elite partisan infrastructure documented by @tesler_post-racial_2016 and @mendelberg_race_2001 arrive pre-coded with racial content.
+
+The variable importance information enrich this interpretation in ways that go beyond what coefficient estimates can establish. First, the most important covariate in the racial resentment forest for national retrospective pessimism is not ideology, party identification, or any conventional political attitude but hostile sexism (normalized importance = 1.0) which is the item asking whether women over-interpret innocent remarks as sexist. This reflects the co-constitution of racial and gender-based resentment within a common status-hierarchical attitudinal package [@strolovitch_possessive_2017; @junn_trump_2017]. The forest is adjusting for this package heavily, which is part of the mechanical explanation for GPS-OLS overcounting. But the substantive implication is more than a confounding correction, rather it suggests that what @gilens_why_1999 describes as racialized policy interpretation and what the symbolic politics tradition treats as a domain-specific racial orientation are both expressions of a more unified status-hierarchical disposition that encompasses racial and gender hierarchies simultaneously. Economic pessimism activates racial resentment not in isolation but through this broader attitudinal cluster. Second, the prominence of psychological distress variables, PHQ-2 depression items, trouble concentrating, life satisfaction, in the second tier of predictors corroborates @melcher_economic_2023's finding that affective economic insecurity, not objective conditions, is the dimension of economic experience most tightly linked to racial attitudes. Third, the importance profiles shift across treatments in theoretically meaningful ways. National retrospective pessimism is often coupled with stable dispositional orientations (sexism, distress, religious identity), while personal financial pessimism is more coupled with contemporaneous emotional states. 
+
+The contrast between retrospective and prospective treatments is among the project's most theoretically consequential findings. National prospective pessimism yields a significant GPS-OLS coefficient but a flat causal forest and diagnostic results. The theoretical explanation is that prospective national expectations are less susceptible to the accumulated elite racial coding through which racecraft is transmitted through retrospective national economic narratives. Retrospective evaluations condense a year of partisan media framing which prospective expectations are more anchored in current personal emotional states — worry, fear — and less organized by the coherent ideological structure that gives retrospective national assessments their identifying leverage. The causal forest, by detecting this asymmetry, is not merely providing a robustness check but is providing evidence for the mechanism, that being the treatment that is more susceptible to elite racial coding survives; the treatment that is not, does not.
+
+Among the project's secondary outcomes, aid-to-poor opposition is the strongest redistribution based finding as it consistently predicted by national retrospective pessimism across both estimators good calibration. It's confounding was structured by income and spending preferences. This is the domain where the self-interest argument is most directly legible in the forest's confounding structure. Welfare spending opposition fails causal forest calibration entirely and this is explained in Figure 12, where the latter highlights welfare model is captured by pre-election presidential vote and racialized redistribution attitudes. This however, is theoretically predicted by @gilens_why_1999's argument that welfare is the most racially and partisan-saturated domain of American redistribution politics. Therefore, welfare's failure is not a model misspecification but a theoretically informative result about where the partisan racial order absorbs the economic signal rather than transmitting it. Status threat outcomes show the largest GPS-OLS and causal forest divergence of any domain. The parametric models find significance across most treatments where the causal forrest results are mostly nulls. This is consistent with @richeson_negotiating_2007's experimental evidence that explicit group-competition beliefs require demographic threat cues rather than diffuse economic pessimism to activate reliably.
+
+Regarding the methods of this paper, the GPS-OLS to causal forest difference in effect is two to three times larger in favor of GPS-OLS, across all treatment-outcome combinations. This in itself, is itself a substantive finding about how political behavior research produces and evaluates effect estimates. It is not a discrepancy between two estimators targeting different quantities, as both target the continuous ATE on the same scale. However, it reflects parametric linear adjustment overcounting treatment variance when the confounding surface is high-dimensional and nonlinear, producing estimates that look robust to conventional specification checks but inflate the true effect relative to what nonparametric adjustment reveals. The causal forest does not resolve fundamental identification problems but it establishes that the economic-resentment connection is not a functional-form artifact. Taking all findings together, the results support the paper's theoretical position of racial resentment is not a fixed symbolic input that precedes and insulates preferences from economic conditions. It is, at least in part, a produced output whose production is mediated by a specific attitudinal cluster centered on gender-based status threat, psychological distress, and religious identity, and whose activation by national retrospective economic narratives survives even the most demanding nonparametric adjustment the data can support. That even after controlling for hostile sexism, depression, life satisfaction, religion denomination, ideology, and more than 35 additional covariates, causal forrest still finds $b = 0.069$ at $\Gamma = 3.0$ is the project's core empirical contribution. Which points toward the deeper structural question the paper's theoretical framework identifies, which is not whether economic conditions affect racial attitudes, but through what institutional infrastructure and ideological mechanism the conversion of economic experience into racial grievance is accomplished at scale. 
+
+\newpage
+
+\newpage
+
+## Appendix 
+
+### List of of All Variables
+
+
+
+```{r tbl-appendix-vars, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
+
+tribble(
+  ~`ANES Code`, ~`Label`, ~`Role`,
+
+  # ── TREATMENTS ──────────────────────────────────────────────────────────────
+  "**TREATMENTS**", "", "",
+  "V241294x", "National economy better/worse last year",        "Treatment (continuous)",
+  "V241297x", "Economy better/worse next 12 months",            "Treatment (continuous)",
+  "V241451",  "R better/worse off financially than 1 year ago", "Treatment (continuous)",
+  "V241452",  "R better/worse off financially next year",       "Treatment (continuous)",
+  "V241294x", "National retrospective pessimism (binary)",      "Treatment (binary)",
+  "V241297x", "National prospective pessimism (binary)",        "Treatment (binary)",
+  "V241451",  "Personal retrospective pessimism (binary)",      "Treatment (binary)",
+  "V241452",  "Personal prospective worry (binary)",            "Treatment (binary)",
+
+  # ── OUTCOMES ────────────────────────────────────────────────────────────────
+  "**OUTCOMES (active)**", "", "",
+  "V242300–V242303", "Racial resentment index",           "Outcome — Primary",
+  "V241275x",        "Welfare spending opposition",       "Outcome — Redistribution",
+  "V241281x",        "Aid to poor opposition",            "Outcome — Redistribution",
+  "V242519",         "White status / jobs threat",        "Outcome — Status Threat",
+  "V242522x",        "Government favors Blacks (amount)", "Outcome — Status Threat",
+
+  # ── OLS CONTROLS ────────────────────────────────────────────────────────────
+  "GPS-OLS CONTROLS", "", "",
+  "V241551",  "Gender",                        "OLS Control",
+  "V241025",  "Party registration",            "OLS Control",
+  "V241177",  "Ideology (7-pt)",               "OLS Control",
+  "V241420",  "Religion importance",           "OLS Control",
+  "V241465x", "Education (5-category)",        "OLS Control",
+  "V241483",  "Employment status",             "OLS Control",
+  "V241497",  "Union membership",              "OLS Control",
+  "V241567x", "Household income (6-category)", "OLS Control",
+
+  # ── CF EXTRA CONTROLS ───────────────────────────────────────────────────────
+  "CF ADDITIONAL CONTROLS", "", "",
+  "V241004",         "Attention to politics",                          "CF Control",
+  "V241039",         "Pre-election presidential vote",                 "CF Control",
+  "V241104",         "Recall of 2020 presidential vote",               "CF Control",
+  "V241117",         "Right track / wrong track",                      "CF Control",
+  "V241118–V241126", "Emotions battery (9 items)",                     "CF Control",
+  "V241232",         "Government waste",                               "CF Control",
+  "V241236",         "Which party better: economy",                    "CF Control",
+  "V241237",         "Which party better: immigration",                "CF Control",
+  "V241239",         "Spending & services scale",                      "CF Control",
+  "V241252",         "Guaranteed job-income scale",                    "CF Control",
+  "V241255",         "Gov't assistance to Blacks scale",               "CF Control",
+  "V241266x",        "Federal spending: public schools",               "CF Control",
+  "V241269x",        "Federal spending: border security",              "CF Control",
+  "V241272x",        "Federal spending: crime",                        "CF Control",
+  "V241275x",        "Federal spending: welfare programs",             "CF Control",
+  "V241281x",        "Federal spending: aid to poor",                  "CF Control",
+  "V241290x",        "DEI approval/disapproval",                       "CF Control",
+  "V241302",         "Abortion stance (STD)",                          "CF Control",
+  "V241319x",        "Favor/oppose voter ID",                          "CF Control",
+  "V241320",         "Favor/oppose allowing felons to vote",           "CF Control",
+  "V241335",         "Trust in news media",                            "CF Control",
+  "V241372x",        "Transgender bathroom policy",                    "CF Control",
+  "V241375x",        "Trans girls K-12 sports ban",                    "CF Control",
+  "V241378x",        "Gay/lesbian job protection",                     "CF Control",
+  "V241381x",        "Gay/lesbian adoption",                           "CF Control",
+  "V241385x",        "Gay marriage support",                           "CF Control",
+  "V241387",         "Favor/oppose ending birthright citizenship",     "CF Control",
+  "V241397",         "Best way to deal with urban unrest",             "CF Control",
+  "V241422",         "Religion denomination",                          "CF Control",
+  "V241539",         "Financial worry (current)",                      "CF Control",
+  "V241540",         "Ability to make housing payments",               "CF Control",
+  "V241554",         "Stock market investment",                        "CF Control",
+  "V241570",         "Trouble concentrating (past week)",              "CF Control",
+  "V241571",         "Health insurance coverage",                      "CF Control",
+  "V241575",         "Little interest/pleasure (PHQ-2, item 1)",       "CF Control",
+  "V241576",         "Felt depressed/hopeless (PHQ-2, item 2)",        "CF Control",
+  "V241577",         "Too sensitive / easily offended",                "CF Control",
+  "V241578",         "How often R self-censors",                       "CF Control",
+  "V241579",         "Justified to use violence for political goals",  "CF Control",
+  "V241607",         "Women over-interpret remarks as sexist",         "CF Control",
+  "V241608",         "Women seek control over men",                    "CF Control",
+  "V241621",         "Life satisfaction",                              "CF Control"
+
+) %>%
+  kable(escape = FALSE,
+        caption = "Appendix: Complete variable list. Analysis restricted to non-Hispanic white respondents (N = 3,946).") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE) %>%
+  column_spec(1, width = "8em") %>%
+  column_spec(2, width = "16em") %>%
+  column_spec(3, width = "10em")
+```
+
+
+\newpage
+
+## References

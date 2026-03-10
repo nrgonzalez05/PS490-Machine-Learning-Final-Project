@@ -1,0 +1,21 @@
+model,outcome,treatment,est,se,p,n_used,ok,stars,p_fmt,outcome_label,treatment_label,primary
+CF(ATT),O1_rr_index,T3_fin_nextyear_worried,-0.0033483472057258545,0.02469276627800118,0.8921372461676003,NA,TRUE,,0.892137,Racial resentment index,Personal financial prospective worry,TRUE
+CF(ATT),O1_rr_index,T6_nat_econ_next_worse,-0.004832712137342611,0.025729896427835696,0.8510140097959216,NA,TRUE,,0.851014,Racial resentment index,National prospective economic pessimism,TRUE
+CF(ATT),O1_rr_index,T7_nat_econ_last_worse,0.16519359060444638,0.08212100412784995,0.04426343146176648,NA,TRUE,*,0.044263,Racial resentment index,National retrospective economic pessimism,TRUE
+CF(ATT),O1_rr_index,T8_pers_fin_last_worse,0.05228223691865252,0.029826165647313826,0.07961945476942489,NA,TRUE,.,0.079619,Racial resentment index,Personal financial retrospective pessimism,TRUE
+CF(ATT),O4_welfare_binary,T3_fin_nextyear_worried,0.027367364388536885,0.009369931788226671,0.003491736292640768,NA,TRUE,**,0.003492,Welfare spending opposition,Personal financial prospective worry,FALSE
+CF(ATT),O4_welfare_binary,T6_nat_econ_next_worse,0.014452956071700305,0.00983635994713079,0.14174062157432665,NA,TRUE,,0.141741,Welfare spending opposition,National prospective economic pessimism,FALSE
+CF(ATT),O4_welfare_binary,T7_nat_econ_last_worse,0.055270967459313314,0.023137017526125396,0.016900996201207885,NA,TRUE,*,0.016901,Welfare spending opposition,National retrospective economic pessimism,FALSE
+CF(ATT),O4_welfare_binary,T8_pers_fin_last_worse,-0.016581462177825183,0.010109832868888023,0.1009776876941455,NA,TRUE,,0.100978,Welfare spending opposition,Personal financial retrospective pessimism,FALSE
+CF(ATT),O5_aidpoor_binary,T3_fin_nextyear_worried,0.06600916739060003,0.011221961624967953,4.049915958148631e-9,NA,TRUE,***,4.05e-09,Aid to poor opposition,Personal financial prospective worry,FALSE
+CF(ATT),O5_aidpoor_binary,T6_nat_econ_next_worse,0.10830788821316044,0.011282395575529961,0,NA,TRUE,***,< 1e-16,Aid to poor opposition,National prospective economic pessimism,FALSE
+CF(ATT),O5_aidpoor_binary,T7_nat_econ_last_worse,0.13938768106614907,0.033518276589504604,3.2026359672698845e-5,NA,TRUE,***,3.20e-05,Aid to poor opposition,National retrospective economic pessimism,FALSE
+CF(ATT),O5_aidpoor_binary,T8_pers_fin_last_worse,0.04364458632003444,0.013087269428236388,8.533356079716281e-4,NA,TRUE,***,0.000853,Aid to poor opposition,Personal financial retrospective pessimism,FALSE
+CF(ATT),O6_status_jobs_threat,T3_fin_nextyear_worried,-0.012094882037534423,0.035697606656261704,0.7347491546526403,NA,TRUE,,0.734749,White status / jobs threat,Personal financial prospective worry,FALSE
+CF(ATT),O6_status_jobs_threat,T6_nat_econ_next_worse,0.04416960046022871,0.03685780995041106,0.2307697676816729,NA,TRUE,,0.230770,White status / jobs threat,National prospective economic pessimism,FALSE
+CF(ATT),O6_status_jobs_threat,T7_nat_econ_last_worse,0.06912978763359094,0.09016223468791801,0.4432440586437256,NA,TRUE,,0.443244,White status / jobs threat,National retrospective economic pessimism,FALSE
+CF(ATT),O6_status_jobs_threat,T8_pers_fin_last_worse,-0.00430682554390729,0.04123742270072016,0.9168203902467553,NA,TRUE,,0.916820,White status / jobs threat,Personal financial retrospective pessimism,FALSE
+CF(ATT),O7_gov_favors_blacks_amt,T3_fin_nextyear_worried,0.12011998033837483,0.04312828406373606,0.0053498222019428,NA,TRUE,**,0.005350,Government favors Blacks (amount),Personal financial prospective worry,FALSE
+CF(ATT),O7_gov_favors_blacks_amt,T6_nat_econ_next_worse,0.056563744474531455,0.04522473378671475,0.21103450892528186,NA,TRUE,,0.211035,Government favors Blacks (amount),National prospective economic pessimism,FALSE
+CF(ATT),O7_gov_favors_blacks_amt,T7_nat_econ_last_worse,0.02603337645800498,0.16477732014781,0.874463685592967,NA,TRUE,,0.874464,Government favors Blacks (amount),National retrospective economic pessimism,FALSE
+CF(ATT),O7_gov_favors_blacks_amt,T8_pers_fin_last_worse,0.10214299538813458,0.05190864944473806,0.049097363173345565,NA,TRUE,*,0.049097,Government favors Blacks (amount),Personal financial retrospective pessimism,FALSE

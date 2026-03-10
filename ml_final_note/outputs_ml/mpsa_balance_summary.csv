@@ -1,0 +1,5 @@
+treatment,n_covariates,n_balanced,pct_balanced,max_SMD_prematch,max_SMD_postmatch
+National prospective economic pessimism,9,6,66.7,0.6851,0.1621
+National retrospective economic pessimism,9,5,55.6,1.7403,0.1918
+Personal financial prospective worry,9,8,88.9,0.6287,0.1025
+Personal financial retrospective pessimism,9,5,55.6,0.8637,0.1651

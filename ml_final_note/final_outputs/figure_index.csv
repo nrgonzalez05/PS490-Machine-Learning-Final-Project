@@ -1,0 +1,10 @@
+Figure,File,Description,Section
+Fig 01,fig_01_estimator_comparison_primary.png,GPS-OLS vs CF: racial resentment (primary outcome),Main Results
+Fig 02,fig_02_estimator_comparison_all.png,GPS-OLS vs CF: all outcomes (welfare appendix),Main Results
+Fig 03,fig_03_balance_attenuation.png,DIM -> IPW -> DR attenuation by control set,Balance
+Fig 04,fig_04_dose_response_primary.png,Dose-response curves: racial resentment,Dose-Response
+Fig 05,fig_05_dose_response_full.png,Dose-response curves: all outcomes,Dose-Response
+Fig 06,fig_06_sensitivity_gamma.png,Rosenbaum critical Gamma summary,Sensitivity
+Fig 07,fig_07_calibration_primary.png,CF calibration coefficients: primary outcome,Diagnostics
+Fig 08,fig_08_what_density.png,W.hat propensity distribution by treatment,Diagnostics
+Fig 09,fig_09_what_support.png,Local treatment support by W.hat quintile,Diagnostics
